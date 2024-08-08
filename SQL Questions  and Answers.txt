@@ -1,0 +1,93 @@
+1. How many burgers were ordered?
+
+	SELECT COUNT(*) AS Number_of_Burgers FROM customer_orders
+
+2. How many unique customer orders were made?
+
+	SELECT COUNT(DISTINCT(customer_id)) AS Number_of_Customers FROM customer_orders
+
+3. How many successful orders were delivered by each runner?
+
+	SELECT runner_id, COUNT(*) AS successful_orders
+	FROM burger_runner_orders
+	WHERE cancellation LIKE null OR cancellation = ''
+	GROUP BY runner_id
+	ORDER BY successful_orders DESC;
+
+4(a). How many of each type of burger was ordered?
+
+	SELECT n.burger_name,COUNT(*) AS Frequency FROM customer_orders c 
+	JOIN 
+	burger_name n 
+	ON c.burger_id = n.burger_id
+	GROUP BY c.burger_id
+
+(b). How many of each type of burger was delivered?
+
+	SELECT p.burger_name, COUNT(c.burger_id) AS delivered_burger_count
+	FROM customer_orders AS c
+	JOIN burger_runner_orders AS r
+ 	ON c.order_id = r.order_id
+	JOIN burger_name AS p
+ 	ON c.burger_id = p.burger_id
+	WHERE r.distance != 0
+	GROUP BY p.burger_name;
+
+5. How many Vegetarian and Meatlovers were ordered by each customer?
+
+	SELECT c.customer_id,b.burger_name,COUNT(b.burger_name) FROM customer_orders c
+	JOIN 
+	burger_name b
+	ON c.burger_id = b.burger_id
+	GROUP BY c.customer_id,c.burger_id
+
+
+6. What was the maximum number of burgers delivered in a single order?
+
+	SELECT c.order_id, COUNT(*) AS Frequency FROM customer_orders c
+	JOIN 
+	burger_runner_orders r
+	ON c.order_id = r.order_id
+	WHERE r.distance != 0
+	GROUP BY order_id
+	ORDER BY Frequency DESC
+	LIMIT 1
+
+
+7. For each customer, how many delivered burgers had at least 1 change and how many had no changes?
+
+	SELECT c.customer_id,
+ 	SUM(CASE 
+  		WHEN c.exclusions <> ' ' OR c.extras <> ' ' THEN 1
+  		ELSE 0
+ 	END) AS at_least_1_change,
+	 SUM(CASE 
+ 		WHEN c.exclusions = ' ' AND c.extras = ' ' THEN 1 
+  		ELSE 0
+  	END) AS no_change
+	FROM customer_orders AS c
+	JOIN burger_runner_orders AS r
+ 	ON c.order_id = r.order_id
+	WHERE r.distance != 0
+	GROUP BY c.customer_id
+	ORDER BY c.customer_id;
+
+8. What was the total volume of burgers ordered for each hour of the day?
+
+	SELECT EXTRACT(hour from order_time) as 'Hour', COUNT(*) FROM customer_orders
+	GROUP BY EXTRACT(hour from order_time)
+
+9. How many runners signed up for each 1 week period? 
+
+	SELECT EXTRACT(WEEK from registration_date) AS Week, COUNT(*) AS runner_signup
+	FROM burger_runner
+	GROUP BY EXTRACT(WEEK from registration_date)
+
+10. What was the average distance travelled for each customer?
+
+	SELECT c.customer_id,ROUND(AVG(b.distance),2) AS Avg_Distance FROM customer_orders c 
+	JOIN 
+	burger_runner_orders b 
+	ON c.order_id = b.order_id
+	WHERE b.distance != 0
+	GROUP BY c.customer_id
